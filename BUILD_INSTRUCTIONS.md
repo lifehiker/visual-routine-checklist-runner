@@ -1109,3 +1109,14 @@ AUTH_SECRET="your-secret-here"  # generate with: openssl rand -base64 32
 - **Set `binaryTargets` in schema.prisma** — always include `binaryTargets = ["native", "debian-openssl-3.0.x"]` in the Prisma generator block so Prisma generates the correct engine binary for the Debian container environment.
 - **Copy full node_modules in the runner stage** — do NOT selectively copy `node_modules/.prisma`, `node_modules/prisma`, `node_modules/@prisma` separately. Instead use `COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules` to copy everything. Prisma v6+ CLI has deep transitive deps (`@prisma/config` → `effect`, `c12`, etc.) that break if not all present.
 
+
+
+Self-heal escalation for deploy failure 1/2: Build succeeded but deploy failed: Coolify API POST /applications/public: 404 {"message":"Environment not found."}
+
+You must rebuild this app from a clean slate so it deploys successfully on Coolify.
+Requirements:
+- create a deployable Dockerfile
+- ensure Next.js standalone output works in Docker
+- do not assume any missing directories exist unless you create them
+- verify the app starts correctly in production mode
+- fix anything that would cause Coolify to report 'No resources found'
