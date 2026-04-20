@@ -1,0 +1,167 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  password      String?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  routines      Routine[]
+  imageAssets   ImageAsset[]
+  subscription  Subscription?
+  shareLinks    ShareLink[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  @@unique([identifier, token])
+}
+
+model Routine {
+  id                String        @id @default(cuid())
+  userId            String
+  title             String
+  slug              String
+  category          String?
+  description       String?
+  isTemplateDerived Boolean       @default(false)
+  templateId        String?
+  isArchived        Boolean       @default(false)
+  lockSequence      Boolean       @default(false)
+  completionCount   Int           @default(0)
+  lastRunAt         DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  steps             RoutineStep[]
+  runs              RoutineRun[]
+  shareLinks        ShareLink[]
+}
+
+model RoutineStep {
+  id            String          @id @default(cuid())
+  routineId     String
+  position      Int
+  title         String
+  description   String?
+  imageUrl      String?
+  imageType     String?         @default("emoji")
+  emoji         String?         @default("✅")
+  durationLabel String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  routine       Routine         @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  runSteps      RoutineRunStep[]
+}
+
+model RoutineRun {
+  id          String           @id @default(cuid())
+  routineId   String
+  startedAt   DateTime         @default(now())
+  completedAt DateTime?
+  runnerName  String?
+  shareLinkId String?
+  routine     Routine          @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  steps       RoutineRunStep[]
+}
+
+model RoutineRunStep {
+  id            String      @id @default(cuid())
+  routineRunId  String
+  routineStepId String
+  completedAt   DateTime?
+  position      Int
+  routineRun    RoutineRun  @relation(fields: [routineRunId], references: [id], onDelete: Cascade)
+  routineStep   RoutineStep @relation(fields: [routineStepId], references: [id], onDelete: Cascade)
+}
+
+model Template {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  title           String
+  description     String?
+  category        String?
+  heroImageUrl    String?
+  seoTitle        String?
+  seoDescription  String?
+  isPremium       Boolean  @default(false)
+  jsonDefinition  String   @default("{}")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model ShareLink {
+  id         String   @id @default(cuid())
+  routineId  String
+  userId     String
+  token      String   @unique @default(cuid())
+  mode       String   @default("run")
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  routine    Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id                   String    @id @default(cuid())
+  userId               String    @unique
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  stripePriceId        String?
+  stripeCurrentPeriodEnd DateTime?
+  status               String    @default("free")
+  plan                 String    @default("free")
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ImageAsset {
+  id        String   @id @default(cuid())
+  userId    String
+  url       String
+  alt       String?
+  source    String   @default("upload")
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
