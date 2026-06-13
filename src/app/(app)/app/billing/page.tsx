@@ -7,7 +7,7 @@ import { PLANS } from "@/lib/stripe";
 export default async function BillingPage() {
   const session = await auth();
   const userId = (session!.user as { id: string }).id;
-  const sub = await prisma.subscription.findUnique({ where: { userId } });
+  const sub = await prisma.subscription.findUnique({ where: { userId } }).catch(() => null);
   const plan = sub?.plan || "free";
   const planInfo = PLANS[plan as keyof typeof PLANS] || PLANS.free;
 
