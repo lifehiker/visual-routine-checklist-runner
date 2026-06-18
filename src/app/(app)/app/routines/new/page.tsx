@@ -1,3 +1,4 @@
+"use client";
 import { RoutineForm } from "@/components/routines/routine-form";
 
 export default function NewRoutinePage() {
